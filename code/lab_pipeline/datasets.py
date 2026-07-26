@@ -132,3 +132,128 @@ class FaceSpectrogramDatasetAdapter:
             random_state=seed,
         )
         return list(train), list(test)
+
+class FaceDatasetAdapter:
+    """Build single-modality jobs containing one face image each."""
+
+    def __init__(self, face_dir: Path) -> None:
+        self.face_dir = face_dir
+
+    @staticmethod
+    def _list_images(root: Path, label: str) -> list[Path]:
+        class_dir = root / label
+        if not class_dir.is_dir():
+            raise FileNotFoundError(f"Required class directory not found: {class_dir}")
+
+        images: list[Path] = []
+        for path in class_dir.rglob("*"):
+            if not path.is_file() or path.suffix.lower() not in IMAGE_EXTENSIONS:
+                continue
+            relative_parts = path.relative_to(class_dir).parts
+            if path.name.startswith("._") or any(part.startswith(".") for part in relative_parts):
+                continue
+            images.append(path)
+        return sorted(images, key=lambda item: str(item.relative_to(class_dir)))
+
+    def build(self) -> list[InferenceJob]:
+        jobs: list[InferenceJob] = []
+        for label in VALID_LABELS:
+            faces = self._list_images(self.face_dir, label)
+            LOGGER.info("%s: face=%d", label, len(faces))
+
+            for face_path in faces:
+                identity = f"{label}|{face_path.resolve()}"
+                job_id = hashlib.sha256(identity.encode("utf-8")).hexdigest()[:20]
+                jobs.append(
+                    InferenceJob(
+                        job_id=job_id,
+                        label=label,
+                        image_paths=(face_path,),
+                        metadata={"face_path": str(face_path)},
+                    )
+                )
+
+        if not jobs:
+            raise ValueError("No face images were found")
+        return jobs
+
+    @staticmethod
+    def split(
+        jobs: Sequence[InferenceJob], test_size: float, seed: int
+    ) -> tuple[list[InferenceJob], list[InferenceJob]]:
+        try:
+            from sklearn.model_selection import train_test_split
+        except ImportError as exc:
+            raise RuntimeError("scikit-learn is required") from exc
+
+        train, test = train_test_split(
+            list(jobs),
+            test_size=test_size,
+            shuffle=True,
+            stratify=[job.label for job in jobs],
+            random_state=seed,
+        )
+        return list(train), list(test)
+
+
+class SpectrogramDatasetAdapter:
+    """Build single-modality jobs containing one spectrogram image each."""
+
+    def __init__(self, spectrogram_dir: Path) -> None:
+        self.spectrogram_dir = spectrogram_dir
+
+    @staticmethod
+    def _list_images(root: Path, label: str) -> list[Path]:
+        class_dir = root / label
+        if not class_dir.is_dir():
+            raise FileNotFoundError(f"Required class directory not found: {class_dir}")
+
+        images: list[Path] = []
+        for path in class_dir.rglob("*"):
+            if not path.is_file() or path.suffix.lower() not in IMAGE_EXTENSIONS:
+                continue
+            relative_parts = path.relative_to(class_dir).parts
+            if path.name.startswith("._") or any(part.startswith(".") for part in relative_parts):
+                continue
+            images.append(path)
+        return sorted(images, key=lambda item: str(item.relative_to(class_dir)))
+
+    def build(self) -> list[InferenceJob]:
+        jobs: list[InferenceJob] = []
+        for label in VALID_LABELS:
+            specs = self._list_images(self.spectrogram_dir, label)
+            LOGGER.info("%s: spec=%d", label, len(specs))
+
+            for spec_path in specs:
+                identity = f"{label}|{spec_path.resolve()}"
+                job_id = hashlib.sha256(identity.encode("utf-8")).hexdigest()[:20]
+                jobs.append(
+                    InferenceJob(
+                        job_id=job_id,
+                        label=label,
+                        image_paths=(spec_path,),
+                        metadata={"spec_path": str(spec_path)},
+                    )
+                )
+
+        if not jobs:
+            raise ValueError("No spectrogram images were found")
+        return jobs
+
+    @staticmethod
+    def split(
+        jobs: Sequence[InferenceJob], test_size: float, seed: int
+    ) -> tuple[list[InferenceJob], list[InferenceJob]]:
+        try:
+            from sklearn.model_selection import train_test_split
+        except ImportError as exc:
+            raise RuntimeError("scikit-learn is required") from exc
+
+        train, test = train_test_split(
+            list(jobs),
+            test_size=test_size,
+            shuffle=True,
+            stratify=[job.label for job in jobs],
+            random_state=seed,
+        )
+        return list(train), list(test)
