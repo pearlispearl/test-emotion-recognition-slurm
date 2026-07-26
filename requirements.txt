@@ -1,0 +1,6 @@
+ollama
+redis
+pandas
+scikit-learn
+transformers
+torch
