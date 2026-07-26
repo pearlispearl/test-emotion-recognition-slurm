@@ -39,7 +39,7 @@ CODE_ROOT="/home/workspace/students/$USER_NAME/$PROJECT_NAME"
 USER_DATA_ROOT="/data1/workspace/students/$USER_NAME"
 PROJECT_DATA_ROOT="$USER_DATA_ROOT/$PROJECT_NAME"
 DATASET_ROOT="$USER_DATA_ROOT/dataset/$DATASET_NAME"
-RUN_ROOT="$PROJECT_DATA_ROOT/jobs"
+RUN_ROOT="$PROJECT_DATA_ROOT/slurm-runs"
 
 PYTHON="$CODE_ROOT/.venv/bin/python"
 PROGRAM="$CODE_ROOT/code/experiment_4_multimodal.py"
