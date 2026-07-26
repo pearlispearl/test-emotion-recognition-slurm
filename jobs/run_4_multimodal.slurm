@@ -23,7 +23,7 @@ USER_NAME="${USER_NAME:-soongswang-kornkanok}"
 
 # The same project name is used under /home/workspace/<linux-user>/
 # and /data1/workspace/students/<user-name>/
-PROJECT_NAME="${PROJECT_NAME:-template-pun}"
+PROJECT_NAME="${PROJECT_NAME:-project-01}"
 
 # Selected dataset folder under /data1/workspace/students/<user-name>/
 DATASET_NAME="${DATASET_NAME:-P3-V1-Ravdess}"
@@ -35,7 +35,7 @@ DATASET_NAME="${DATASET_NAME:-P3-V1-Ravdess}"
 
 LINUX_USER="${SLURM_JOB_USER:-$(id -un)}"
 
-CODE_ROOT="/home/workspace/$LINUX_USER/$PROJECT_NAME"
+CODE_ROOT="/home/workspace/students/$USER_NAME/$PROJECT_NAME"
 USER_DATA_ROOT="/data1/workspace/students/$USER_NAME"
 PROJECT_DATA_ROOT="$USER_DATA_ROOT/$PROJECT_NAME"
 DATASET_ROOT="$USER_DATA_ROOT/$DATASET_NAME"
