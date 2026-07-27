@@ -42,7 +42,7 @@ DATASET_ROOT="$PROJECT_DATA_ROOT/dataset/$DATASET_NAME"
 RUN_ROOT="$PROJECT_DATA_ROOT/slurm-runs"
 
 PYTHON="$CODE_ROOT/.venv/bin/python"
-PROGRAM="$CODE_ROOT/code/experiment_5_face_only.py"
+PROGRAM="$CODE_ROOT/code/experiment/experiment_5_face_only.py"
 
 # =============================================================================
 # SMALL VALIDATION HELPERS
