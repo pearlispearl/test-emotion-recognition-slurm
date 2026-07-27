@@ -126,6 +126,11 @@ printf '%s\n' \
 
 cd "$CODE_ROOT"
 
+# Allow Python to find project-01/lab_pipeline
+export PYTHONPATH="$CODE_ROOT${PYTHONPATH:+:$PYTHONPATH}"
+
+srun --unbuffered "$PYTHON" "$PROGRAM"
+
 # =============================================================================
 # REDIS CHECK
 # =============================================================================
