@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-#SBATCH --job-name=exp5-open-face-no-instruction
+#SBATCH --job-name=exp7-spectrogram-only
 #SBATCH --partition=all
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
@@ -38,11 +38,11 @@ LINUX_USER="${SLURM_JOB_USER:-$(id -un)}"
 CODE_ROOT="/home/workspace/students/$USER_NAME/$PROJECT_NAME"
 USER_DATA_ROOT="/data1/workspace/students/$USER_NAME"
 PROJECT_DATA_ROOT="$USER_DATA_ROOT/$PROJECT_NAME"
-DATASET_ROOT="$USER_DATA_ROOT/dataset/$DATASET_NAME"
-RUN_ROOT="$USER_DATA_ROOT/slurm-runs"
+DATASET_ROOT="$PROJECT_DATA_ROOT/dataset/$DATASET_NAME"
+RUN_ROOT="$PROJECT_DATA_ROOT/slurm-runs"
 
 PYTHON="$CODE_ROOT/.venv/bin/python"
-PROGRAM="$CODE_ROOT/code/experiment_5_open_face_no_instruct.py"
+PROGRAM="$CODE_ROOT/code/experiment/experiment_7_spectrogram_only.py"
 
 # =============================================================================
 # SMALL VALIDATION HELPERS
@@ -150,7 +150,7 @@ PY
 
 # =============================================================================
 # READ MODEL SETTINGS FROM PYTHON
-# The model and provider are configured only in experiment_4_multimodal.py.
+# The model and provider are configured only in experiment_7_spectrogram_only.py.
 # =============================================================================
 
 read_python_constant() {
@@ -258,5 +258,8 @@ fi
 # =============================================================================
 # EXECUTE THE PYTHON EXPERIMENT
 # =============================================================================
+
+# Allow Python to find project-01/lab_pipeline
+export PYTHONPATH="$CODE_ROOT/code${PYTHONPATH:+:$PYTHONPATH}"
 
 srun --unbuffered "$PYTHON" "$PROGRAM"
