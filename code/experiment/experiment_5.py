@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """File 4 converted to a reusable Slurm-ready Python experiment."""
 
 from __future__ import annotations
@@ -21,7 +20,7 @@ from lab_pipeline.core import (
     setup_logging,
     write_reports,
 )
-from lab_pipeline.datasets import FaceSpectrogramDatasetAdapter
+from lab_pipeline.datasets import FaceImageDatasetAdapter
 from lab_pipeline.providers import ProviderFactory
 
 # =============================================================================
@@ -30,7 +29,7 @@ from lab_pipeline.providers import ProviderFactory
 # =============================================================================
 
 FACE_SUBDIRECTORY = "Img"
-SPECTROGRAM_SUBDIRECTORY = "Spectrogram"
+# SPECTROGRAM_SUBDIRECTORY = "Spectrogram" # face-only doesn't use spectrogram
 
 # Model
 PROVIDER = "ollama"
@@ -60,9 +59,9 @@ BERT_MODEL = "typeform/distilbert-base-uncased-mnli"
 BERT_THRESHOLD = 0.38
 BERT_MIN_MARGIN = 0.03
 
-# Dataset-pairing safety
-STRICT_PAIRS = False
-ALLOW_POSITIONAL_FALLBACK = False
+# Dataset-pairing safety # comment because face-only doesn't require image pairing
+# STRICT_PAIRS = False
+# ALLOW_POSITIONAL_FALLBACK = False
 
 # Set True only for validation without model execution.
 DRY_RUN = False
@@ -71,18 +70,26 @@ DRY_RUN = False
 
 LOGGER = logging.getLogger("slurm_experiment")
 
-SYSTEM_PROMPT = 'You are an expert at classifying sentiment by combining facial expression and audio spectrograms.\nInstructions: You will receive one face image and one spectrogram image. Examine both.\nFor the face image: Examine the face in the image and focus on:\n\n* Mouth shape: Observe whether the mouth forms a smile, frown, neutral expression, or lip compression.\n* Eyebrow position: Determine whether the eyebrows are raised, furrowed, or relaxed, as these may reflect different emotional states.\n* Eye expression: Assess whether the eyes appear wide open, squinted, relaxed, or show noticeable tension.\n* Facial muscle tension: Examine tension in the cheeks, forehead, and jaw, including the presence of wrinkles, tightened muscles, or relaxed facial features.\n* Facial symmetry: Consider whether the facial expression is symmetrical or shows asymmetrical muscle activation, which may provide additional cues about the expressed emotion.\n* Overall facial affect: Integrate the observed facial features to infer the dominant emotional expression while relying only on visible facial characteristics.\n\nFor the spectrogram image: Examine the spectrogram as a frequency-domain representation of the audio signal. Base your sentiment judgment only on visual acoustic patterns in the spectrogram, not on speech content or transcript information. Focus on the following features:\n\n* Energy level: Identify regions with high or low intensity in decibel scale. Higher overall energy or sudden energy changes may indicate stronger emotional expression, while lower and more stable energy may suggest neutral or calm content.\n* Dominant frequency range: Observe whether the main energy is concentrated in low, mid, or high frequencies. Higher-frequency dominance may be associated with sharper or more excited acoustic patterns, while lower-frequency dominance may indicate calmer or heavier tones.\n* Temporal variation: Examine how the energy changes over time. Rapid fluctuations, abrupt bursts, or irregular patterns may indicate stronger emotional variation, whereas smooth and stable patterns may suggest neutral sentiment.\n* Harmonic structure: Look for evenly spaced horizontal bands that indicate clear pitch or voiced sound. Strong and regular harmonic structures may reflect stable vocal expression, while weak, broken, or noisy structures may indicate tension, uncertainty, or negative affect.\n* High-frequency energy: Check whether energy is visible above approximately 10-15 kHz or mostly confined to lower frequencies. Extended high-frequency energy may indicate sharper, brighter, or more intense sound characteristics.\n* Spectral balance: Consider whether the spectrogram shows a balanced distribution of energy or whether it is concentrated in limited frequency regions. Use this information to support the final sentiment classification.\n\nAfter examining these features from the face image and the spectrogram image, classify the sentiment into one of the following categories: Positive, Neutral, or Negative. Output format: Respond with exactly one label: Positive, Negative, or Neutral. Output the label only, no explanation, punctuation, or additional text.'
-USER_MESSAGE = 'Classify the sentiment expressed in both face image and spectrogram image.'
+SYSTEM_PROMPT = (
+    "You are an expert at classifying sentiment from facial expressions.\n"
+    "Output format: Respond with exactly one label: Positive, Negative, or "
+    "Neutral. Output the label only, no explanation, punctuation, or "
+    "additional text."
+)
 
-def resolve_dataset_paths() -> tuple[Path, Path, Path]:
+USER_MESSAGE = (
+    "Classify the sentiment expressed in this face image."
+)
+
+def resolve_dataset_paths() -> tuple[Path, Path]:
     dataset_root = Path(
         required_environment("DATASET_ROOT")
     ).expanduser().resolve()
 
     face_dir = dataset_root / FACE_SUBDIRECTORY
-    spectrogram_dir = dataset_root / SPECTROGRAM_SUBDIRECTORY
+    # spectrogram_dir = dataset_root / SPECTROGRAM_SUBDIRECTORY
 
-    return dataset_root, face_dir, spectrogram_dir
+    return dataset_root, face_dir
 
 def required_environment(name: str) -> str:
     """Read an environment variable that Slurm must provide."""
@@ -118,14 +125,14 @@ def create_config() -> PipelineConfig:
 
     paths = RunPaths.from_run_dir(run_dir)
 
-    dataset_root, face_dir, spectrogram_dir = resolve_dataset_paths()
+    dataset_root, face_dir = resolve_dataset_paths()
 
     resume = environment_bool("RESUME")
 
     immutable = {
-        "experiment": "4.0-face-spectrogram-multimodal",
+        "experiment": "5.0-face-only-open-mouth",
+        "dataset_root": str(dataset_root),
         "face_dir": str(face_dir),
-        "spectrogram_dir": str(spectrogram_dir),
         "provider": PROVIDER,
         "model": MODEL,
         "temperature": TEMPERATURE,
@@ -143,7 +150,7 @@ def create_config() -> PipelineConfig:
     return PipelineConfig(
         paths=paths,
         run_id=paths.run_dir.name,
-        experiment_name="4.0-face-spectrogram-multimodal",
+        experiment_name="5.0-face-only-open-mouth",
         provider=PROVIDER,
         model=MODEL,
         system_prompt=SYSTEM_PROMPT,
@@ -182,28 +189,22 @@ async def run() -> int:
     config.paths.create()
     setup_logging(config.paths.log_dir)
 
-    dataset_root, face_dir, spectrogram_dir = resolve_dataset_paths()
+    dataset_root, face_dir = resolve_dataset_paths()
+
+    if not dataset_root.is_dir():
+        raise FileNotFoundError(
+            f"Dataset directory not found: {dataset_root}"
+        )
 
     if not face_dir.is_dir():
         raise FileNotFoundError(
             f"Face directory not found: {face_dir}"
         )
 
-    if not spectrogram_dir.is_dir():
-        raise FileNotFoundError(
-            f"Spectrogram directory not found: "
-            f"{spectrogram_dir}"
-        )
-
     metadata = RunMetadataRepository(config)
     metadata.start()
     try:
-        dataset = FaceSpectrogramDatasetAdapter(
-            face_dir.expanduser().resolve(),
-            spectrogram_dir.expanduser().resolve(),
-            strict_pairs=STRICT_PAIRS,
-            allow_positional_fallback=ALLOW_POSITIONAL_FALLBACK,
-        )
+        dataset = FaceImageDatasetAdapter(face_dir)
 
         def build_jobs():
             all_jobs = dataset.build()
