@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-#SBATCH --job-name=exp4-multimodal
+#SBATCH --job-name=exp5-face-only
 #SBATCH --partition=all
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
@@ -26,7 +26,7 @@ USER_NAME="${USER_NAME:-soongswang-kornkanok}"
 PROJECT_NAME="${PROJECT_NAME:-project-01}"
 
 # Selected dataset folder under /data1/workspace/students/<user-name>/
-DATASET_NAME="${DATASET_NAME:-P3-V1-Ravdess}"
+DATASET_NAME="${DATASET_NAME:-silver_dataset_open_mouth}"
 
 # =============================================================================
 # AUTOMATIC PATHS
@@ -42,7 +42,7 @@ DATASET_ROOT="$PROJECT_DATA_ROOT/dataset/$DATASET_NAME"
 RUN_ROOT="$PROJECT_DATA_ROOT/slurm-runs"
 
 PYTHON="$CODE_ROOT/.venv/bin/python"
-PROGRAM="$CODE_ROOT/code/experiment_4_multimodal.py"
+PROGRAM="$CODE_ROOT/code/experiment/experiment_5_face_only.py"
 
 # =============================================================================
 # SMALL VALIDATION HELPERS
@@ -150,7 +150,7 @@ PY
 
 # =============================================================================
 # READ MODEL SETTINGS FROM PYTHON
-# The model and provider are configured only in experiment_4_multimodal.py.
+# The model and provider are configured only in experiment_5_face_only.py.
 # =============================================================================
 
 read_python_constant() {
@@ -258,5 +258,8 @@ fi
 # =============================================================================
 # EXECUTE THE PYTHON EXPERIMENT
 # =============================================================================
+
+# Allow Python to find project-01/lab_pipeline
+export PYTHONPATH="$CODE_ROOT/code${PYTHONPATH:+:$PYTHONPATH}"
 
 srun --unbuffered "$PYTHON" "$PROGRAM"
