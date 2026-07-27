@@ -1,4 +1,4 @@
-"""File 4 converted to a reusable Slurm-ready Python experiment."""
+"""File 4"""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""File 4 converted to a reusable Slurm-ready Python experiment."""
+"""File 5"""
 
 from __future__ import annotations
 
@@ -54,7 +54,7 @@ SEED = 42
 MAX_SAMPLES = 0
 
 # Output interpretation
-BERT_ENABLED = True
+BERT_ENABLED = False
 BERT_MODEL = "typeform/distilbert-base-uncased-mnli"
 BERT_THRESHOLD = 0.38
 BERT_MIN_MARGIN = 0.03
